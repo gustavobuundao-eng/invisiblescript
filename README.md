@@ -1,6 +1,6 @@
 # invisiblescript
 -- script editado: tecla trocada para o número 1 (linha superior do teclado)
-local key = Enum.KeyCode.One -- key to toggle invisibility --// nao edite o script abaixo
+local key = Enum.UserInputType.MouseButton4 -- key to toggle invisibility --// nao edite o script abaixo
 local invis_on = false
 
 function onKeyPress(inputObject, chat)
