@@ -1,16 +1,6 @@
--- Bezalel Hub v1.0 - v8 FIXED
--- FIX 1: Proximity Fling na aba Skills
--- FIX 2: Aimbot RMB one-shot lock (so gruda se tiver alguem na mira; teleporte libera)
--- FIX 3: Loader transparente com blur; hub aparece gradualmente
--- FIX 4: Modo camera bloqueia botoes do mouse no personagem
--- FIX 5: Modo camera scroll zoom in/out
--- FIX 6: Modo camera LeftCtrl = velocidade reduzida
--- FIX 7: Passo Fantasma com limite de distancia
--- FIX 8: Jogadores: botao Fling por player
--- FIX 9: Aba Amigos com status online e botao Seguir
--- FIX 10: Bolinha desativada por padrao ao iniciar
--- FIX 11: Pressionar Z (transformacao) nao aciona teclas do hub
--- FIX 12: Removidos emojis (causavam falha em executors)
+
+-- Bezalel Hub v1.0 — v8 FIXED
+-- CORREÇÃO PRINCIPAL: cada aba virou uma local function para evitar "Out of local registers" (limite 200)
 
 if _G.BZSession then _G.BZSession=_G.BZSession+1 else _G.BZSession=1 end
 if _G.FLY_LOOP then _G.FLY_LOOP:Disconnect(); _G.FLY_LOOP=nil end
@@ -23,7 +13,7 @@ pcall(function()
 end)
 
 -- ============================================================
--- TELA DE CARREGAMENTO -- transparente + blur
+-- LOADER — transparente + blur
 -- ============================================================
 local function mostrarLoader(onComplete)
     local cg = gethui and gethui() or game.CoreGui
@@ -65,7 +55,7 @@ local function mostrarLoader(onComplete)
 
     local versaoTxt = Instance.new("TextLabel",logoF)
     versaoTxt.Size = UDim2.new(1,0,0,18); versaoTxt.Position = UDim2.new(0,0,0,52)
-    versaoTxt.BackgroundTransparency = 1; versaoTxt.Text = "v1.0  --  Iniciando sistema..."
+    versaoTxt.BackgroundTransparency = 1; versaoTxt.Text = "v1.0  —  Iniciando sistema..."
     versaoTxt.Font = Enum.Font.Gotham; versaoTxt.TextSize = 11; versaoTxt.TextColor3 = Color3.fromRGB(200,170,255)
     versaoTxt.TextXAlignment = Enum.TextXAlignment.Center; versaoTxt.TextTransparency = 1
 
@@ -96,7 +86,7 @@ local function mostrarLoader(onComplete)
         {0.60,"Verificando iluminacao..."},
         {0.74,"Preparando interface visual..."},
         {0.89,"Carregando recursos..."},
-        {1.00,"[OK]  Hub pronto!"},
+        {1.00,"✔  Hub pronto!"},
     }
 
     task.spawn(function()
@@ -113,7 +103,7 @@ local function mostrarLoader(onComplete)
             TS_:Create(pbFill,TweenInfo.new(0.3,Enum.EasingStyle.Quad),{Size=UDim2.new(c[1],0,1,0)}):Play()
             statusLbl.Text = c[2]; task.wait(0.38)
         end
-        versaoTxt.Text = "[OK]  Iniciando hub..."; task.wait(0.5)
+        versaoTxt.Text = "✔  Iniciando hub..."; task.wait(0.5)
         TS_:Create(BG,TweenInfo.new(0.55,Enum.EasingStyle.Sine),{BackgroundTransparency=1}):Play()
         TS_:Create(loaderBlur,TweenInfo.new(0.55,Enum.EasingStyle.Sine),{Size=0}):Play()
         for _,v in pairs(BG:GetDescendants()) do
@@ -152,7 +142,6 @@ local HttpService=game:GetService("HttpService")
 local LocalPlayer=Players.LocalPlayer
 local Camera=workspace.CurrentCamera
 
--- AIMBOT CONFIG
 local AIM_BONE="Head"; local AIM_VEL_PROJ=300; local AIM_MAX_T=0.40
 local AIM_PREDICT={{maxDist=40,mult=0.30},{maxDist=100,mult=0.55},{maxDist=200,mult=0.75},{maxDist=math.huge,mult=0.50}}
 local function aimGetMult(dist) for _,b in ipairs(AIM_PREDICT) do if dist<b.maxDist then return b.mult end end; return AIM_PREDICT[#AIM_PREDICT].mult end
@@ -179,10 +168,10 @@ local spectOrbitX,spectOrbitY,spectOrbitDist=0,0,10
 local spectSavedWS=16; local spectSavedJP=50
 local useBall=false
 
-local flingAtivo      = false
-local flingRadius     = 20
-local flingOldPos     = nil
-local flingFPDH       = workspace.FallenPartsDestroyHeight
+local flingAtivo=false
+local flingRadius=20
+local flingOldPos=nil
+local flingFPDH=workspace.FallenPartsDestroyHeight
 
 local kbGated={fly=false,invis=false,jump=false,freecam=false,noclip=false,fling=false}
 local KB={hub=Enum.KeyCode.Home,fly=Enum.KeyCode.Unknown,invis=Enum.KeyCode.Unknown,
@@ -415,12 +404,6 @@ end
 -- ESP
 -- ============================================================
 do
-    local function hpColor(r)
-        r=math.clamp(r,0,1)
-        if r>=0.5 then return Color3.new(1-(r-.5)/.5,1,0)
-        elseif r>=0.25 then local t=(r-.25)/.25; return Color3.new(1,t*.65+(1-t)*.45,0)
-        else return Color3.new(1,(r/.25)*.45,0) end
-    end
     updateHLColor=function()
         for _,h in pairs(espHLCache) do
             if h and h.Parent then h.OutlineColor=espHLColor; h.FillColor=espHLColor; h.FillTransparency=espHLFillT end
@@ -486,7 +469,7 @@ do
             do
                 local r=math.clamp(hp/maxHp,0,1)
                 if r>=0.5 then color=Color3.new(1-(r-.5)/.5,1,0)
-                elseif r>=0.25 then local t2=(r-.25)/.25; color=Color3.new(1,t2*.65+(1-t2)*.45,0)
+                elseif r>=0.25 then local t=(r-.25)/.25; color=Color3.new(1,t*.65+(1-t)*.45,0)
                 else color=Color3.new(1,(r/.25)*.45,0) end
             end
             data.nLbl.Visible=espNome; data.hLbl.Visible=espHP; data.dLbl.Visible=espDist
@@ -696,7 +679,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AIMBOT -- one-shot lock no RMB press + deteccao de teleporte
+-- AIMBOT LOOP
 -- ============================================================
 RunService.RenderStepped:Connect(function()
     if _G.BZSession~=BZ_SID then return end
@@ -705,22 +688,17 @@ RunService.RenderStepped:Connect(function()
         aimLockedTarget=nil; aimLastPos=nil; return
     end
     if not aimLockedTarget then return end
-
     local char=aimLockedTarget.Character
     local hum=char and char:FindFirstChildOfClass("Humanoid")
     if not hum or hum.Health<=0 or not aimLockedTarget.Parent then
         aimLockedTarget=nil; aimLastPos=nil; return
     end
     local aimPart=aimGetPart(char); if not aimPart then aimLockedTarget=nil; aimLastPos=nil; return end
-
     if aimLastPos then
         local moved=(aimPart.Position-aimLastPos).Magnitude
-        if moved>60 then
-            aimLockedTarget=nil; aimLastPos=nil; return
-        end
+        if moved>60 then aimLockedTarget=nil; aimLastPos=nil; return end
     end
     aimLastPos=aimPart.Position
-
     local hrp=char:FindFirstChild("HumanoidRootPart"); if not hrp then return end
     local pos=aimPart.Position
     local vel=hrp.AssemblyLinearVelocity
@@ -860,7 +838,9 @@ MiniBall.ZIndex=500; MiniBall.Visible=false; corner(MiniBall,99)
 local ballGrad=Instance.new("UIGradient",MiniBall)
 ballGrad.Color=ColorSequence.new{ColorSequenceKeypoint.new(0,Color3.fromRGB(160,30,255)),ColorSequenceKeypoint.new(1,Color3.fromRGB(60,0,140))}
 ballGrad.Rotation=135
-do
+
+-- MiniBall drag (isolated function to reduce register count)
+local function _initBallDrag()
     local bs=Instance.new("UIStroke",MiniBall); bs.Color=Color3.fromRGB(160,40,255); bs.Thickness=2.5; bs.Transparency=0.2
     if BALL_IMAGE_ID~="" then
         local ballImg=Instance.new("ImageLabel",MiniBall)
@@ -900,6 +880,7 @@ do
         end
     end)
 end
+_initBallDrag()
 
 local TooltipFrame=Instance.new("Frame",ScreenGui)
 TooltipFrame.Size=UDim2.new(0,200,0,0); TooltipFrame.AutomaticSize=Enum.AutomaticSize.Y
@@ -962,7 +943,8 @@ FpsValueLbl.Size=UDim2.new(1,-36,1,0); FpsValueLbl.Position=UDim2.new(0,34,0,0)
 FpsValueLbl.TextXAlignment=Enum.TextXAlignment.Left
 local FpsDot=Instance.new("Frame",FpsDisplay); FpsDot.Size=UDim2.new(0,6,0,6); FpsDot.AnchorPoint=Vector2.new(1,0.5)
 FpsDot.Position=UDim2.new(1,-5,0.5,0); FpsDot.BackgroundColor3=HC.Success; FpsDot.BorderSizePixel=0; corner(FpsDot,99)
-do
+
+local function _initFpsDrag()
     local fpsDraggable=false; local fpsDragActive=false
     local fpsDragStart; local fpsDragStartPos
     local fpsClickTime=0; local fpsClickCount=0
@@ -990,6 +972,7 @@ do
         end
     end)
 end
+_initFpsDrag()
 
 local Main=Instance.new("Frame",ScreenGui)
 Main.Name="Main"; Main.AnchorPoint=Vector2.new(0.5,0.5)
@@ -1019,7 +1002,7 @@ VersaoLbl.TextXAlignment=Enum.TextXAlignment.Center; VersaoLbl.ZIndex=6
 local SearchBox=Instance.new("Frame",Sidebar)
 SearchBox.Size=UDim2.new(1,-14,0,27); SearchBox.Position=UDim2.new(0,7,0,68)
 SearchBox.BackgroundColor3=HC.Surface2; SearchBox.BorderSizePixel=0; corner(SearchBox,7)
-local searchIco=lbl(SearchBox,">>",11,Enum.Font.Gotham,HC.TextMuted,1)
+local searchIco=lbl(SearchBox,"🔍",11,Enum.Font.Gotham,HC.TextMuted,1)
 searchIco.Size=UDim2.new(0,24,1,0); searchIco.TextXAlignment=Enum.TextXAlignment.Center
 local SearchInput=Instance.new("TextBox",SearchBox)
 SearchInput.Size=UDim2.new(1,-28,1,-4); SearchInput.Position=UDim2.new(0,24,0,2)
@@ -1368,10 +1351,12 @@ local function criarItemBloqueado(pai,nome,ordem)
     return F
 end
 
+-- ============================================================
 -- TAB SYSTEM
+-- ============================================================
 local Pages={}; local TabBtns={}; local ActiveTab=nil
 local TabNames={"Visual","PVP","Skills","AutoFarm","Jogadores","Amigos","TP","Misc","Creditos"}
-local TabIcons={"[V]","[P]","[S]","[A]","[J]","[F]","[T]","[M]","[i]"}
+local TabIcons={"👁","🎯","⚡","🌾","👥","👋","📍","⚙","ℹ"}
 
 local SearchResultsPage=Instance.new("Frame",Scroll)
 SearchResultsPage.Name="SearchPage"; SearchResultsPage.Size=UDim2.new(1,0,0,0)
@@ -1410,9 +1395,9 @@ for i,nome in ipairs(TabNames) do
 end
 
 -- ============================================================
--- ABA VISUAL
+-- ABA VISUAL — separada em funcao para nao estourar os 200 registros
 -- ============================================================
-do
+local function _buildVisualTab()
     currentTab="Visual"; local vis=Pages["Visual"]
     criarHeader(vis,"[ ESP ]",1)
     local espMainCard,espBar=baseCard(vis,50,2); local espEstado=true
@@ -1467,29 +1452,32 @@ do
     criarSoKB(vis,"Visao Sensorial","Destaca inimigos em vermelho por 5s",
         "Escolha uma tecla. Pressione para ativar.","vision",26)
 end
+_buildVisualTab()
 
 -- ============================================================
 -- ABA PVP
 -- ============================================================
-do
+local function _buildPVPTab()
     currentTab="PVP"; local pvp=Pages["PVP"]
     criarHeader(pvp,"[ AIMBOT ]",1)
     criarToggle(pvp,"Aim Assist","Segure RMB: gruda na mira se tiver alguem | Teleporte do alvo libera",
         "Segure RMB com alguem na mira para travar. Se nao tiver ninguem na FOV, nao grava. Se o alvo teleportar, libera automaticamente.",false,
-        function() aimAtivo=true; showTopNotif("Aim Assist ON - segure RMB com alvo na mira",HC.Accent) end,
+        function() aimAtivo=true; showTopNotif("Aim Assist ON — segure RMB com alvo na mira",HC.Accent) end,
         function() aimAtivo=false; aimLockedTarget=nil; aimLastPos=nil; showTopNotif("Aim Assist desativado",HC.Border) end,2)
     criarSlider(pvp,"FOV do Aimbot","Raio de deteccao em graus","Quanto menor, mais preciso.",1,20,8,function(v) aimFOV=v end,3)
     criarSlider(pvp,"Suavidade","0=instantaneo | 10=suave","Controla a gradualidade do movimento.",0,10,0,function(v) aimSmooth=v end,4)
+
     criarHeader(pvp,"[ PASSO FANTASMA ]",10)
     criarSoKB(pvp,"Passo Fantasma","Ative, use 1x (RMB hover + LMB), desativa sozinho | Max: "..maxTlDist.."st",
         "Ative com a tecla. Segure RMB sobre o alvo e clique LMB para teletransportar. Tem limite de distancia. Desativa automaticamente.","tl",11)
     criarSlider(pvp,"Limite de Distancia","Distancia maxima do Passo Fantasma","Se o alvo estiver mais longe, o TP nao ocorre.",10,300,maxTlDist,function(v) maxTlDist=v end,12)
 end
+_buildPVPTab()
 
 -- ============================================================
 -- ABA SKILLS
 -- ============================================================
-do
+local function _buildSkillsTab()
     currentTab="Skills"; local hab=Pages["Skills"]
     criarHeader(hab,"[ VOO ]",1)
     criarToggleKB(hab,"Voar","WASD para mover | camera controla direcao",
@@ -1531,6 +1519,7 @@ do
         table.insert(allCards,{card=spCard,tab="Skills",name="super pulo",keywords="pulo altura salto jump",origParent=hab})
         table.insert(allToggleSetters,{fn=function() spEstado=false; spSetPill2(false); kbGated.jump=false; superPuloAtivo=false; spBar.BackgroundTransparency=1 end})
     end
+
     criarHeader(hab,"[ STEALTH ]",10)
     criarToggleKB(hab,"Invisivel","Usa cadeira invisivel para ocultar o personagem",
         "Toggle arma. Escolha uma tecla para ativar/desativar.","invis",false,
@@ -1556,11 +1545,12 @@ do
     criarSlider(hab,"Raio do Fling","Distancia maxima para detectar alvos","Jogadores fora desse raio serao ignorados.",5,100,20,
         function(v) flingRadius=v end,22)
 end
+_buildSkillsTab()
 
 -- ============================================================
 -- ABA AUTOFARM
 -- ============================================================
-do
+local function _buildAutoFarmTab()
     currentTab="AutoFarm"; local af=Pages["AutoFarm"]
     local warnCard=Instance.new("Frame",af); warnCard.Size=UDim2.new(1,0,0,54); warnCard.LayoutOrder=0
     warnCard.BackgroundColor3=Color3.fromRGB(35,22,12); warnCard.BorderSizePixel=0; corner(warnCard,8)
@@ -1576,11 +1566,12 @@ do
     criarItemBloqueado(af,"Taijutsu",10); criarItemBloqueado(af,"HP",11)
     criarHeader(af,"[ AUTO RANK UP ]",12); criarItemBloqueado(af,"Auto Rank Up",13)
 end
+_buildAutoFarmTab()
 
 -- ============================================================
 -- ABA JOGADORES
 -- ============================================================
-do
+local function _buildJogadoresTab()
     currentTab="Jogadores"; local jogPag=Pages["Jogadores"]
     criarHeader(jogPag,"[ JOGADORES ]",1)
     local _,rBtn=criarBotao(jogPag,"Atualizar Lista","Atualiza a lista de jogadores online",nil,nil,2)
@@ -1610,7 +1601,7 @@ do
             local gameNameLbl=lbl(card,p.DisplayName,10,Enum.Font.Gotham,HC.TextMuted,1)
             gameNameLbl.Size=UDim2.new(1,-214,0,14); gameNameLbl.Position=UDim2.new(0,60,0,28)
             gameNameLbl.TextXAlignment=Enum.TextXAlignment.Left
-
+            -- Botao Ver (spectate)
             local specBtn=Instance.new("TextButton",card); specBtn.Size=UDim2.new(0,42,0,24)
             specBtn.AnchorPoint=Vector2.new(1,0.5); specBtn.Position=UDim2.new(1,-8,0.5,0)
             specBtn.BackgroundColor3=HC.Info; specBtn.BorderSizePixel=0; specBtn.Text="Ver"
@@ -1633,6 +1624,7 @@ do
                     showTopNotif("Vendo: "..p.Name.." | Mouse=orbitar | Scroll=zoom",HC.Info)
                 end
             end)
+            -- Botao TP
             local tpBtn2=Instance.new("TextButton",card); tpBtn2.Size=UDim2.new(0,42,0,24)
             tpBtn2.AnchorPoint=Vector2.new(1,0.5); tpBtn2.Position=UDim2.new(1,-56,0.5,0)
             tpBtn2.BackgroundColor3=HC.Accent; tpBtn2.BorderSizePixel=0; tpBtn2.Text="TP"
@@ -1643,6 +1635,7 @@ do
                 local ok2,myRoot=pcall(getHRP); if not ok2 then return end
                 myRoot.CFrame=rt.CFrame*CFrame.new(0,0,3); showTopNotif("TP -> "..p.Name,HC.Accent)
             end)
+            -- Botao Fling
             local flingBtn=Instance.new("TextButton",card); flingBtn.Size=UDim2.new(0,42,0,24)
             flingBtn.AnchorPoint=Vector2.new(1,0.5); flingBtn.Position=UDim2.new(1,-104,0.5,0)
             flingBtn.BackgroundColor3=HC.Danger; flingBtn.BorderSizePixel=0; flingBtn.Text="Fling"
@@ -1655,6 +1648,7 @@ do
                 showTopNotif("Fling -> "..p.Name,HC.Danger)
                 task.spawn(function() pcall(doFling,p) end)
             end)
+            -- Clique no card = copiar nick
             local copyArea=Instance.new("TextButton",card); copyArea.Size=UDim2.new(1,0,1,0)
             copyArea.BackgroundTransparency=1; copyArea.Text=""; copyArea.ZIndex=2
             copyArea.MouseButton1Click:Connect(function()
@@ -1674,11 +1668,12 @@ do
     Players.PlayerAdded:Connect(function() task.wait(1); refreshPlayerList() end)
     Players.PlayerRemoving:Connect(function() task.wait(0.5); refreshPlayerList() end)
 end
+_buildJogadoresTab()
 
 -- ============================================================
 -- ABA AMIGOS
 -- ============================================================
-do
+local function _buildAmigosTab()
     currentTab="Amigos"; local amigosPag=Pages["Amigos"]
     criarHeader(amigosPag,"[ AMIGOS ONLINE ]",1)
 
@@ -1688,7 +1683,7 @@ do
     local loadingCard=Instance.new("Frame",amigosPag); loadingCard.Size=UDim2.new(1,0,0,38)
     loadingCard.BackgroundColor3=HC.Surface2; loadingCard.BorderSizePixel=0; loadingCard.LayoutOrder=3; corner(loadingCard,8)
     loadingCard.Visible=false
-    local loadLbl=lbl(loadingCard,"Buscando amigos online...",11,nil,HC.TextMuted,1)
+    local loadLbl=lbl(loadingCard,"🔄  Buscando amigos online...",11,nil,HC.TextMuted,1)
     loadLbl.Size=UDim2.new(1,0,1,0); loadLbl.TextXAlignment=Enum.TextXAlignment.Center
 
     local aFrame=Instance.new("Frame",amigosPag); aFrame.Size=UDim2.new(1,0,0,0)
@@ -1721,7 +1716,7 @@ do
                 local errCard=Instance.new("Frame",aFrame); errCard.Size=UDim2.new(1,0,0,54)
                 errCard.BackgroundColor3=Color3.fromRGB(35,14,14); errCard.BorderSizePixel=0; errCard.LayoutOrder=1; corner(errCard,8)
                 stroke(errCard,HC.Danger,0.5)
-                local el=lbl(errCard,"[ERRO]  Erro ao buscar amigos.\nVerifique se o executor permite HttpGet.",10,nil,HC.Danger,1)
+                local el=lbl(errCard,"❌  Erro ao buscar amigos.\nVerifique se o executor permite HttpGet.",10,nil,HC.Danger,1)
                 el.Size=UDim2.new(1,-16,1,0); el.Position=UDim2.new(0,8,0,0)
                 el.TextWrapped=true; el.TextXAlignment=Enum.TextXAlignment.Left; el.TextYAlignment=Enum.TextYAlignment.Center
                 return
@@ -1744,16 +1739,16 @@ do
             if #onlineFriends==0 then
                 local nc=Instance.new("Frame",aFrame); nc.Size=UDim2.new(1,0,0,44)
                 nc.BackgroundColor3=HC.Surface2; nc.BorderSizePixel=0; nc.LayoutOrder=1; corner(nc,8)
-                local nl=lbl(nc,"Nenhum amigo online no momento.",11,nil,HC.TextMuted,1)
+                local nl=lbl(nc,"Nenhum amigo online no momento. 😴",11,nil,HC.TextMuted,1)
                 nl.Size=UDim2.new(1,0,1,0); nl.TextXAlignment=Enum.TextXAlignment.Center
                 return
             end
             for i,f in ipairs(onlineFriends) do
                 local isInGame=(f.userPresenceType==2)
-                isPrivate = isInGame and (not f.gameId or f.gameId=="" or f.gameId==nil)
+                local isPrivate=isInGame and (not f.gameId or f.gameId=="" or f.gameId==nil)
                 local isSameGame=isInGame and (f.placeId==game.PlaceId or f.rootPlaceId==game.PlaceId)
 
-                local cardH = isInGame and 78 or 62
+                local cardH=isInGame and 78 or 62
                 local card=Instance.new("Frame",aFrame); card.Size=UDim2.new(1,0,0,cardH)
                 card.BackgroundColor3=HC.Surface2; card.BorderSizePixel=0; card.LayoutOrder=i; corner(card,8)
 
@@ -1782,20 +1777,20 @@ do
                 local statusText, statusColor
                 if isInGame then
                     if isPrivate then
-                        statusText="[Privado]  Servidor Privado"
+                        statusText="🔒  Servidor Privado"
                         statusColor=Color3.fromRGB(255,180,60)
                     else
-                        statusText="[Jogo]  "..(f.lastLocation or "Jogo desconhecido")
+                        statusText="🎮  "..(f.lastLocation or "Jogo desconhecido")
                         statusColor=HC.Success
                     end
                 else
-                    statusText="[Menu]  Menu Principal / Website"
+                    statusText="🏠  Menu Principal / Website"
                     statusColor=HC.TextMuted
                 end
-                local statusLbl=lbl(card,statusText,10,Enum.Font.Gotham,statusColor,1)
-                local statusY = (f.displayName and f.displayName~=f.name) and 40 or 28
-                statusLbl.Size=UDim2.new(1,-195,0,14); statusLbl.Position=UDim2.new(0,64,0,statusY)
-                statusLbl.TextXAlignment=Enum.TextXAlignment.Left
+                local statusLbl2=lbl(card,statusText,10,Enum.Font.Gotham,statusColor,1)
+                local statusY=(f.displayName and f.displayName~=f.name) and 40 or 28
+                statusLbl2.Size=UDim2.new(1,-195,0,14); statusLbl2.Position=UDim2.new(0,64,0,statusY)
+                statusLbl2.TextXAlignment=Enum.TextXAlignment.Left
 
                 if isInGame and f.universeId and f.universeId~=0 then
                     local thumbF=Instance.new("Frame",card); thumbF.Size=UDim2.new(0,44,0,44)
@@ -1806,12 +1801,12 @@ do
                     getGameThumb(f.universeId,thumbImg)
                 end
 
-                local canFollow = isInGame and not isPrivate
+                local canFollow=isInGame and not isPrivate
                 local followBtn=Instance.new("TextButton",card); followBtn.Size=UDim2.new(0,78,0,28)
                 followBtn.AnchorPoint=Vector2.new(1,0.5); followBtn.Position=UDim2.new(1,-8,0.5,0)
                 followBtn.BackgroundColor3=canFollow and HC.Accent or HC.Border
                 followBtn.BorderSizePixel=0
-                followBtn.Text=isInGame and (isPrivate and "Privado" or "Seguir") or "Offline"
+                followBtn.Text=isInGame and (isPrivate and "🔒 Privado" or "Seguir") or "Offline"
                 followBtn.TextColor3=Color3.new(1,1,1); followBtn.TextSize=10; followBtn.Font=Enum.Font.GothamBold
                 followBtn.ZIndex=5; corner(followBtn,6)
                 followBtn.MouseButton1Click:Connect(function()
@@ -1820,7 +1815,7 @@ do
                         showTopNotif(f.name.." nao esta em nenhum jogo",HC.Border); return
                     end
                     if isPrivate then
-                        showTopNotif("[Privado] Servidor privado -- impossivel seguir "..f.name,HC.Danger); return
+                        showTopNotif("🔒  Servidor privado — impossivel seguir "..f.name,HC.Danger); return
                     end
                     if isSameGame and f.gameId and #tostring(f.gameId)>5 then
                         showTopNotif("Teleportando para o servidor de "..f.name.."...",HC.Accent)
@@ -1846,11 +1841,12 @@ do
     aRefBtn.MouseButton1Click:Connect(function() pC(); refreshAmigos(); showTopNotif("Buscando amigos online...",HC.Info) end)
     task.spawn(refreshAmigos)
 end
+_buildAmigosTab()
 
 -- ============================================================
 -- ABA TP
 -- ============================================================
-do
+local function _buildTPTab()
     currentTab="TP"; local tpPag=Pages["TP"]
     criarHeader(tpPag,"[ TELEPORTES ]",1)
     criarToggle(tpPag,"Click TP","LCtrl + Clique para teleportar","Segure LCtrl e clique em qualquer superficie.",false,
@@ -1860,7 +1856,7 @@ do
     local dica=Instance.new("Frame",tpPag); dica.Size=UDim2.new(1,0,0,28); dica.LayoutOrder=4
     dica.BackgroundColor3=Color3.fromRGB(18,28,40); dica.BorderSizePixel=0; corner(dica,6)
     stroke(dica,HC.Info,0.6)
-    local dicaL=lbl(dica,"[*]  O titulo de cada save pode ser alterado diretamente!",9,Enum.Font.GothamSemibold,Color3.fromRGB(100,170,255),1)
+    local dicaL=lbl(dica,"✏  O titulo de cada save pode ser alterado diretamente!",9,Enum.Font.GothamSemibold,Color3.fromRGB(100,170,255),1)
     dicaL.Size=UDim2.new(1,-12,1,0); dicaL.Position=UDim2.new(0,8,0,0); dicaL.TextXAlignment=Enum.TextXAlignment.Left
     local tpSaveList=Instance.new("Frame",tpPag); tpSaveList.Size=UDim2.new(1,0,0,0)
     tpSaveList.BackgroundTransparency=1; tpSaveList.AutomaticSize=Enum.AutomaticSize.Y; tpSaveList.LayoutOrder=5
@@ -1872,7 +1868,7 @@ do
             local pos=root.Position; local idx=#tpSaves+1; table.insert(tpSaves,pos)
             local sCard=Instance.new("Frame",tpSaveList); sCard.Size=UDim2.new(1,0,0,58)
             sCard.BackgroundColor3=HC.Surface2; sCard.BorderSizePixel=0; sCard.LayoutOrder=idx; corner(sCard,8)
-            local editHint=lbl(sCard,"E",11,Enum.Font.GothamBold,HC.TextMuted,1)
+            local editHint=lbl(sCard,"✏",11,Enum.Font.GothamBold,HC.TextMuted,1)
             editHint.Size=UDim2.new(0,18,0,18); editHint.Position=UDim2.new(0,8,0,6)
             editHint.TextXAlignment=Enum.TextXAlignment.Center
             local sTitleBox=Instance.new("TextBox",sCard)
@@ -1906,11 +1902,12 @@ do
         end,3)
     saveBtn.Text="Salvar"
 end
+_buildTPTab()
 
 -- ============================================================
 -- ABA MISC
 -- ============================================================
-do
+local function _buildMiscTab()
     currentTab="Misc"; local miscPag=Pages["Misc"]
     criarHeader(miscPag,"[ INTERFACE ]",1)
     criarToggle(miscPag,"Travar Janela","Impede arrastar e redimensionar","Trava posicao e tamanho do hub.",false,
@@ -1945,7 +1942,7 @@ do
                         t2=0; fr=0
                     end
                 end)
-                showTopNotif("FPS ativado -- centro superior da tela",HC.Success)
+                showTopNotif("FPS ativado — centro superior da tela",HC.Success)
             else
                 if fpsConn then fpsConn:Disconnect(); fpsConn=nil end
                 FpsValueLbl.Text="--"
@@ -2002,11 +1999,12 @@ do
             end)
         end,12)
 end
+_buildMiscTab()
 
 -- ============================================================
 -- ABA CREDITOS
 -- ============================================================
-do
+local function _buildCreditosTab()
     currentTab="Creditos"; local cPag=Pages["Creditos"]
     local titleCard=Instance.new("Frame",cPag); titleCard.Size=UDim2.new(1,0,0,70); titleCard.LayoutOrder=1
     titleCard.BackgroundColor3=HC.Accent; titleCard.BorderSizePixel=0; corner(titleCard,10)
@@ -2015,7 +2013,7 @@ do
     tGrad.Rotation=135
     local ct1=lbl(titleCard,"Bezalel Hub",18,Enum.Font.GothamBold,Color3.new(1,1,1),1)
     ct1.Size=UDim2.new(1,0,0,28); ct1.Position=UDim2.new(0,0,0,12); ct1.TextXAlignment=Enum.TextXAlignment.Center
-    local ct2=lbl(titleCard,"Versao 1.0  --  Em Desenvolvimento",10,Enum.Font.Gotham,Color3.fromRGB(220,190,255),1)
+    local ct2=lbl(titleCard,"Versao 1.0  —  Em Desenvolvimento",10,Enum.Font.Gotham,Color3.fromRGB(220,190,255),1)
     ct2.Size=UDim2.new(1,0,0,16); ct2.Position=UDim2.new(0,0,0,42); ct2.TextXAlignment=Enum.TextXAlignment.Center
     local devCard=Instance.new("Frame",cPag); devCard.Size=UDim2.new(1,0,0,80); devCard.LayoutOrder=2
     devCard.BackgroundColor3=HC.Surface2; devCard.BorderSizePixel=0; corner(devCard,8)
@@ -2029,7 +2027,7 @@ do
     msgCard.BackgroundColor3=HC.Surface2; msgCard.BorderSizePixel=0; msgCard.AutomaticSize=Enum.AutomaticSize.Y; corner(msgCard,8)
     local msgTxt=lbl(msgCard,
         "Oi! Obrigado por usar o Bezalel Hub.\n\n"..
-        "Esse e meu primeiro script hub -- desenvolvi tudo do zero, sozinho: o design, o layout, cada funcionalidade e cada detalhe visual.\n\n"..
+        "Esse e meu primeiro script hub — desenvolvi tudo do zero, sozinho: o design, o layout, cada funcionalidade e cada detalhe visual.\n\n"..
         "O script ainda esta em desenvolvimento ativo, entao e possivel que voce encontre alguns bugs por ai. Se encontrar, nao se preocupe, estou sempre trabalhando para melhorar!\n\n"..
         "Em breve terei muito mais funcionalidades, incluindo o AutoFarm completo. Fique ligado!",
         10,Enum.Font.Gotham,HC.Text,1)
@@ -2039,6 +2037,7 @@ do
     msgTxt.LineHeight=1.4
     local msgPad=Instance.new("UIPadding",msgCard); msgPad.PaddingBottom=UDim.new(0,14)
 end
+_buildCreditosTab()
 
 -- ============================================================
 -- INPUT HANDLER
@@ -2054,7 +2053,7 @@ UserInputService.InputBegan:Connect(function(input,gameProcessed)
         return
     end
 
-    -- RMB press -- aimbot one-shot scan
+    -- RMB press — aimbot one-shot scan
     if input.UserInputType==Enum.UserInputType.MouseButton2 then
         if aimAtivo then
             local best,bestA=nil,aimFOV
@@ -2115,7 +2114,7 @@ UserInputService.InputBegan:Connect(function(input,gameProcessed)
         if key==KB.fling and kbGated.fling then
             flingAtivo=not flingAtivo
             if not flingAtivo then workspace.FallenPartsDestroyHeight=flingFPDH end
-            table.insert(msgs,"Proximity Fling "..(flingAtivo and "ON - Raio: "..flingRadius.."st" or "OFF"))
+            table.insert(msgs,"Proximity Fling "..(flingAtivo and "ON — Raio: "..flingRadius.."st" or "OFF"))
             lastOn=flingAtivo
         end
 
@@ -2160,6 +2159,7 @@ UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType==Enum.UserInputType.MouseButton1 then activeDrag=nil end
 end)
 
+-- Drag handler (sliders)
 RunService.RenderStepped:Connect(function()
     if _G.BZSession~=BZ_SID then return end
     if not activeDrag then return end
@@ -2184,6 +2184,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- HUB SHOW/HIDE
 hubVisible=true
 mostrarHub=function()
     hubVisible=true; Main.Visible=true; Main.Size=UDim2.new(0,0,0,0)
@@ -2209,10 +2210,11 @@ BtnClose.MouseButton1Click:Connect(function() pC(); esconderHub() end)
 BtnMin.MouseButton1Click:Connect(function()
     pC(); esconderHub()
     task.delay(0.4,function()
-        if not useBall then showTopNotif("Hub minimizado -- pressione Home para abrir",HC.Info) end
+        if not useBall then showTopNotif("Hub minimizado — pressione Home para abrir",HC.Info) end
     end)
 end)
 
+-- Arrastar janela
 do
     local dragging=false; local dragStart; local startPos
     TopBar.InputBegan:Connect(function(input)
@@ -2232,6 +2234,7 @@ do
     end)
 end
 
+-- Resize
 do
     local resizing=false; local rStart; local rSize
     ResizeHandle.MouseButton1Down:Connect(function()
@@ -2251,6 +2254,7 @@ do
     end)
 end
 
+-- Pesquisa
 SearchInput:GetPropertyChangedSignal("Text"):Connect(function()
     local q=string.lower(SearchInput.Text)
     if q=="" then
@@ -2279,6 +2283,7 @@ trocarAba("Visual")
 Main.Size=UDim2.new(0,0,0,0)
 tw(Main,{Size=UDim2.new(0,hubW,0,hubH)},0.35,Enum.EasingStyle.Back):Play(); pO()
 
+-- Fade-in gradual das abas apos o hub abrir
 task.spawn(function()
     task.wait(0.55)
     for _,tabName in ipairs(TabNames) do
